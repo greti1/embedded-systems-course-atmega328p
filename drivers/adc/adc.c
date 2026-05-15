@@ -18,6 +18,11 @@ void ADC_Init(void) {
 
     // Enable ADC
     ADCSRA |= (1 << ADEN);
+
+    // Dummy conversion after enabling ADC
+    while (ADCSRA & (1 << ADSC));
+    (void)ADCL;
+    (void)ADCH;
 }
 
 /**
@@ -41,5 +46,8 @@ uint16_t ADC_Read(uint8_t channel) {
     while (ADCSRA & (1 << ADSC));
 
     // Return the ADC result
-    return ADC;
+    uint8_t low  = ADCL;
+    uint8_t high = ADCH;
+
+    return ((uint16_t) high << 8) | low;
 }
