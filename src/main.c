@@ -93,7 +93,6 @@ uint16_t adc_read(uint8_t ch) {
     return ADC;
 }
 
-// ---------------- TEMP (STABILIZAT) ----------------
 float last_temp = 0;
 
 float read_temp() {
