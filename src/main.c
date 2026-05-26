@@ -79,7 +79,7 @@ void lcd_init() {
     lcd_cmd(0x01);
 }
 
-// ---------------- ADC ----------------
+
 void adc_init() {
     ADMUX = (1 << REFS0);
     ADCSRA = (1 << ADEN) |
