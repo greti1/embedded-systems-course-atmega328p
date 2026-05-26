@@ -117,7 +117,6 @@ float read_temp() {
     return temp;
 }
 
-// ---------------- MAIN ----------------
 int main(void) {
 
     DDRD |= (1 << GREEN_LED) | (1 << RED_LED) | (1 << YELLOW_LED);
