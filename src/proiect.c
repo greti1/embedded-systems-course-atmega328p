@@ -19,12 +19,15 @@
 #define LIGHT_ON_LIMIT   500
 #define LIGHT_OFF_LIMIT  500
 
+// retine daca ventilatorul a fost pornit manual
 static uint8_t manual_fan = 0;
 
+// trimite mesaj la interfata
 static void send_text(const char *text)
 {
     USART_Transmit((void *)text, strlen(text));
 }
+
 
 static void check_python_command(void)
 {
@@ -32,6 +35,7 @@ static void check_python_command(void)
     {
         char c = UDR0;
 
+        // pornire manuala ventilator
         if (c == '1')
         {
             manual_fan = 1;
@@ -40,6 +44,8 @@ static void check_python_command(void)
 
             send_text("FAN_MANUAL_ON\n");
         }
+
+        // oprire manuala ventilator
         else if (c == '0')
         {
             manual_fan = 0;
@@ -51,10 +57,12 @@ static void check_python_command(void)
     }
 }
 
+
 static uint16_t read_light(void)
 {
     uint32_t sum = 0;
 
+    // facem media ca sa fie mai stabila valoarea
     for (int i = 0; i < 30; i++)
     {
         sum += ADC_Read(0);
@@ -67,6 +75,7 @@ static uint16_t read_light(void)
     return sum / 30;
 }
 
+// initializeaza ledurile, buzzerul si ventilatorul
 static void gpio_init_project(void)
 {
     GPIO_Init(GPIO_PORTD, GREEN_LED, GPIO_OUTPUT);
@@ -77,6 +86,7 @@ static void gpio_init_project(void)
     GPIO_Init(GPIO_PORTB, FAN, GPIO_OUTPUT);
 }
 
+
 static void all_off(void)
 {
     GPIO_Write(GPIO_PORTD, GREEN_LED, GPIO_LOW);
@@ -85,22 +95,25 @@ static void all_off(void)
 
     GPIO_Write(GPIO_PORTB, BUZZER, GPIO_LOW);
 
+    // daca ventilatorul nu e pornit manual il oprim
     if (manual_fan == 0)
     {
         GPIO_Write(GPIO_PORTB, FAN, GPIO_LOW);
     }
 }
 
+
 static void buzzer_soft_beep(void)
 {
     GPIO_Write(GPIO_PORTB, BUZZER, GPIO_HIGH);
 
-    _delay_ms(40);
+    _delay_ms(50);
 
     GPIO_Write(GPIO_PORTB, BUZZER, GPIO_LOW);
 
-    _delay_ms(200);
+    _delay_ms(150);
 }
+
 
 void Proiect_Init(void)
 {
@@ -115,6 +128,7 @@ void Proiect_Init(void)
     send_text("SYSTEM_READY\n");
 }
 
+
 void Proiect_Run(void)
 {
     while (1)
@@ -123,13 +137,14 @@ void Proiect_Run(void)
 
         uint16_t light = read_light();
 
-        // ---------- LIGHT ON ----------
+        // daca lumina e aprinsa
         if (light > LIGHT_ON_LIMIT)
         {
             all_off();
 
             GPIO_Write(GPIO_PORTD, GREEN_LED, GPIO_HIGH);
 
+            // daca ventilatorul a fost pornit din interfata
             if (manual_fan)
             {
                 GPIO_Write(GPIO_PORTB, FAN, GPIO_HIGH);
@@ -150,7 +165,7 @@ void Proiect_Run(void)
             send_text("LIGHT_ON\n");
         }
 
-        // ---------- LIGHT OFF ----------
+        // daca lumina e stinsa
         else
         {
             all_off();
@@ -162,10 +177,12 @@ void Proiect_Run(void)
 
             send_text("LIGHT_OFF\n");
 
+            // asteapta 5 sec pana porneste ventilatorul
             for (int sec = 5; sec >= 1; sec--)
             {
                 light = read_light();
 
+                // daca revine lumina iesim
                 if (light > LIGHT_ON_LIMIT)
                 {
                     break;
@@ -185,7 +202,7 @@ void Proiect_Run(void)
 
             light = read_light();
 
-            // ---------- FAN AUTO ----------
+            // daca tot nu e lumina pornim ventilatorul
             if (light <= LIGHT_OFF_LIMIT)
             {
                 all_off();
@@ -201,6 +218,7 @@ void Proiect_Run(void)
 
                 send_text("FAN_AUTO_ON\n");
 
+                // ramane pornit pana revine lumina
                 while (read_light() <= LIGHT_OFF_LIMIT)
                 {
                     check_python_command();
