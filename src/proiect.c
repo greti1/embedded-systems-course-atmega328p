@@ -54,7 +54,6 @@ static void buzzer_soft_beep(void)
 {
     GPIO_Write(GPIO_PORTB, BUZZER, GPIO_HIGH);
     _delay_ms(50);
-
     GPIO_Write(GPIO_PORTB, BUZZER, GPIO_LOW);
     _delay_ms(150);
 }
